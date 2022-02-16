@@ -5,8 +5,8 @@ module Interpreter (
 
 import Prelude hiding (read)
 import Types
+import Parser
 
-import Control.Monad.Reader (Reader, MonadReader (ask))
 import Data.Map.Strict (Map, (!?))
 import GHC.Exts (fromList)
 
@@ -18,15 +18,18 @@ testMap = fromList [("+", add)]
   add (DEInt n) (DEInt m) = DEInt $ n + m
   add _         _         = error "add"
 
-eval :: DesugaredExpr -> Reader (Map Var Op) DesugaredExpr
-eval = \case
-  DEApp f a -> case f of
-    DELam param body -> eval $ subst param a body
-    e                -> error $ show e <> " is not a function!"
-  DEBin op lhs rhs -> ask >>= \m -> case m !? op of
-    Just f  -> pure $ f lhs rhs
-    Nothing -> error $ "Operation not found: " <> show op
-  e -> pure e
+eval :: Map Var Op -> DesugaredExpr -> DesugaredExpr
+eval env = go
+ where
+  go :: DesugaredExpr -> DesugaredExpr
+  go = \case
+    DEApp f a -> case f of
+      DELam param body -> go $ subst param a body
+      e                -> error $ show e <> " is not a function!"
+    DEBin op lhs rhs -> case env !? op of
+      Just f  -> f (go lhs) (go rhs)
+      Nothing -> error $ "Operation not found: " <> show op
+    e -> e
 
 subst :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr
 subst var expr = \case
@@ -49,7 +52,7 @@ desugar = \case
   ELam xs  body -> DELam (head xs) (desugar $ ELam (tail xs) body)
  where
   lamHelper [x]      l@(DELam _ _   ) = DEApp l (desugar x)
-  lamHelper (x : xs) l@(DELam v body) =
+  lamHelper (x : xs)   (DELam v body) =
     DEApp (DELam v (lamHelper xs body)) (desugar x)
   lamHelper xs e = error $ "Can't apply " <> show xs
                 <> " to non-lambda expression " <> show e
