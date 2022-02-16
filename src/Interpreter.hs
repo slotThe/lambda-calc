@@ -29,6 +29,7 @@ eval env = go
     DEBin op lhs rhs -> case env !? op of
       Just f  -> f (go lhs) (go rhs)
       Nothing -> error $ "Operation not found: " <> show op
+    v@DEVar{} -> error $ "Variable not in scope: " <> show v
     e -> e
 
 subst :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr
