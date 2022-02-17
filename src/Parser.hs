@@ -8,6 +8,7 @@ import qualified Text.Megaparsec.Char       as P
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Control.Applicative
+import Text.Megaparsec ((<?>))
 import Data.Char (isLetter)
 import Data.Text (Text)
 import Data.Void
@@ -26,13 +27,13 @@ pExpr :: Parser Expr
 pExpr = pOps <|> pLambda <|> pApp <|> pTerm
 
 pInt :: Parser Expr
-pInt = EInt <$> L.signed space L.decimal
+pInt = EInt <$> L.signed space L.decimal <?> "pInt"
 
 pVar :: Parser Var
-pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol)
+pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "pVar"
 
 pLambda :: Parser Expr
-pLambda = space *> do
+pLambda = space *> (<?> "pLambda") do
   _  <- symbol "\\"
   vs <- pVar `P.sepBy` space
   _  <- symbol "."
@@ -40,21 +41,24 @@ pLambda = space *> do
   pure $ ELam vs e
 
 pApp :: Parser Expr
-pApp = do
+pApp = (<?> "pApp") do
   lam <- "(" *> pLambda <* ")"
   apps <- space *> pExpr `P.sepBy` space
   pure $ EApp lam apps
 
 pTerm :: Parser Expr
-pTerm = pInt <|> (EVar <$> pVar)
+pTerm = P.try ("(" *> pOps <* ")")
+    <|> pInt
+    <|> (EVar <$> pVar)
 
 pOps :: Parser Expr
-pOps = makeExprParser pTerm table
+pOps = makeExprParser (lexeme pTerm) table
  where
-  table = [[ binary "*" (EBin "*")
-           , binary "+" (EBin "+")
-           , binary "-" (EBin "-")
-           ]]
+  table = [ [ binary "*" (EBin "*") ]
+          , [ binary "+" (EBin "+")
+            , binary "-" (EBin "-")
+            ]
+          ]
   binary name f = InfixL (f <$ symbol name)
 
 takeSymbol :: Parser (P.Tokens Text)
