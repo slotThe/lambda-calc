@@ -5,20 +5,9 @@ module Interpreter (
 
 import Prelude hiding (read)
 import Types
-import Parser
 
-import Data.Map.Strict (Map, (!?))
-import GHC.Exts (fromList)
 
-type Op = DesugaredExpr -> DesugaredExpr -> DesugaredExpr
-
-testMap :: Map Var Op
-testMap = fromList [("+", add)]
- where
-  add (DEInt n) (DEInt m) = DEInt $ n + m
-  add _         _         = error "add"
-
-eval :: Map Var Op -> DesugaredExpr -> DesugaredExpr
+eval :: Env -> DesugaredExpr -> DesugaredExpr
 eval env = go
  where
   go :: DesugaredExpr -> DesugaredExpr
