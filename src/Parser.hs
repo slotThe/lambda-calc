@@ -7,33 +7,32 @@ import qualified Text.Megaparsec            as P
 import qualified Text.Megaparsec.Char       as P
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import Control.Applicative
-import Text.Megaparsec ((<?>))
+import Control.Monad.Combinators.Expr (Operator (InfixL), makeExprParser)
 import Data.Char (isLetter)
 import Data.Text (Text)
-import Data.Void
+import Data.Void (Void)
 import Prelude hiding (read)
-import Control.Monad.Combinators.Expr
+import Text.Megaparsec (empty, (<?>), (<|>))
 
 
 type Parser = P.Parsec Void Text
 
 read :: Text -> Either String Expr
 read inp = case P.parse (pExpr <* P.eof) "" inp of
-  Left err   -> Left $ show err
+  Left err   -> Left $ P.errorBundlePretty err
   Right expr -> Right expr
 
 pExpr :: Parser Expr
 pExpr = pOps <|> pLambda <|> pApp <|> pTerm
 
 pInt :: Parser Expr
-pInt = EInt <$> L.signed space L.decimal <?> "pInt"
+pInt = EInt <$> L.signed space L.decimal <?> "integer"
 
 pVar :: Parser Var
-pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "pVar"
+pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "variable"
 
 pLambda :: Parser Expr
-pLambda = space *> (<?> "pLambda") do
+pLambda = space *> (<?> "lambda") do
   _  <- symbol "\\"
   vs <- pVar `P.sepBy` space
   _  <- symbol "."
@@ -41,7 +40,7 @@ pLambda = space *> (<?> "pLambda") do
   pure $ ELam vs e
 
 pApp :: Parser Expr
-pApp = (<?> "pApp") do
+pApp = (<?> "application") do
   lam <- "(" *> pLambda <* ")"
   apps <- space *> pExpr `P.sepBy` space
   pure $ EApp lam apps
@@ -52,7 +51,7 @@ pTerm = P.try ("(" *> pOps <* ")")
     <|> (EVar <$> pVar)
 
 pOps :: Parser Expr
-pOps = makeExprParser (lexeme pTerm) table
+pOps = makeExprParser (lexeme pTerm) table <?> "binary operation"
  where
   table = [ [ binary "*" (EBin "*") ]
           , [ binary "+" (EBin "+")
