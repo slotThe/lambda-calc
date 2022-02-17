@@ -4,6 +4,7 @@ module Interpreter (
 ) where
 
 import Prelude hiding (read)
+import Control.Exception
 import Types
 
 
@@ -14,11 +15,11 @@ eval env = go
   go = \case
     DEApp f a -> case f of
       DELam param body -> go $ subst param a body
-      e                -> error $ show e <> " is not a function!"
+      e                -> throw $ NotAFunction e
     DEBin op lhs rhs -> case env !? op of
       Just f  -> f (go lhs) (go rhs)
-      Nothing -> error $ "Operation not found: " <> show op
-    v@DEVar{} -> error $ "Variable not in scope: " <> show v
+      Nothing -> throw $ OperationNotFound op
+    DEVar v -> throw $ VariableNotInScope v
     e -> e
 
 subst :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr

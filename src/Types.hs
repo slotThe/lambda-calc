@@ -7,10 +7,13 @@ module Types (
   -- * Expression Types
   Expr(..),
   DesugaredExpr(..),
+  -- * Evaluation Errors
+  ErrorMsg(..),
 ) where
 
 import qualified Data.Map.Strict as Map
 
+import Control.Exception
 import Data.Map.Strict (Map)
 import Data.Text (Text)
 import GHC.Exts
@@ -55,3 +58,17 @@ data DesugaredExpr where
   DELam :: Var -> DesugaredExpr -> DesugaredExpr
   DEApp :: DesugaredExpr -> DesugaredExpr -> DesugaredExpr
   deriving (Show)
+
+data ErrorMsg
+  = VariableNotInScope Var
+  | OperationNotFound  Var
+  | NotAFunction DesugaredExpr
+
+instance Show ErrorMsg where
+  show :: ErrorMsg -> String
+  show = \case
+    VariableNotInScope v -> "Variable not in scope: " <> show v
+    OperationNotFound op -> "Operation not found: " <> show op
+    NotAFunction expr    -> "Can't apply " <> show expr <> " because it is not a function."
+
+instance Exception ErrorMsg
