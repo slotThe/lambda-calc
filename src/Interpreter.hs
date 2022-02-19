@@ -45,5 +45,4 @@ desugar = \case
   lamHelper [x]      l@(DELam _ _   ) = DEApp l (desugar x)
   lamHelper (x : xs)   (DELam v body) =
     DEApp (DELam v (lamHelper xs body)) (desugar x)
-  lamHelper xs e = error $ "Can't apply " <> show xs
-                <> " to non-lambda expression " <> show e
+  lamHelper xs e = throw $ NoLambdaApplication xs e

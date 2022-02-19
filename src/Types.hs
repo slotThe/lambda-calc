@@ -63,12 +63,16 @@ data ErrorMsg
   = VariableNotInScope Var
   | OperationNotFound  Var
   | NotAFunction DesugaredExpr
+  | NoLambdaApplication [Expr] DesugaredExpr
+
+instance Exception ErrorMsg
 
 instance Show ErrorMsg where
   show :: ErrorMsg -> String
   show = \case
     VariableNotInScope v -> "Variable not in scope: " <> show v
     OperationNotFound op -> "Operation not found: " <> show op
-    NotAFunction expr    -> "Can't apply " <> show expr <> " because it is not a function."
-
-instance Exception ErrorMsg
+    NotAFunction expr    ->
+      "Can't apply " <> show expr <> " because it is not a function."
+    NoLambdaApplication app notLam ->
+      "Can't apply " <> show app <> " to non-lambda expression " <> show notLam
