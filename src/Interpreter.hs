@@ -8,10 +8,10 @@ import Control.Exception
 import Types
 
 
-eval :: Env -> DesugaredExpr -> DesugaredExpr
+eval :: Env -> DExpr -> DExpr
 eval env = go
  where
-  go :: DesugaredExpr -> DesugaredExpr
+  go :: DExpr -> DExpr
   go = \case
     DEApp f a -> case f of
       DELam param body -> go $ subst param a body
@@ -22,7 +22,7 @@ eval env = go
     DEVar v -> throw $ VariableNotInScope v
     e -> e
 
-subst :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr
+subst :: Var -> DExpr -> DExpr -> DExpr
 subst var expr = \case
   v@(DEVar v') -> if var == v' then expr else v
   DELam v body ->
@@ -33,7 +33,7 @@ subst var expr = \case
   DEBin op l r -> DEBin op (subst var expr l) (subst var expr r)
   e            -> e
 
-desugar :: Expr -> DesugaredExpr
+desugar :: Expr -> DExpr
 desugar = \case
   EInt n        -> DEInt n
   EVar v        -> DEVar v

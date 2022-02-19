@@ -6,7 +6,7 @@ module Types (
   builtin,
   -- * Expression Types
   Expr(..),
-  DesugaredExpr(..),
+  DExpr(..),
   -- * Evaluation Errors
   ErrorMsg(..),
 ) where
@@ -19,7 +19,7 @@ import Data.Text (Text, unpack)
 import GHC.Exts
 
 type Var = Text
-type Op  = DesugaredExpr -> DesugaredExpr -> DesugaredExpr
+type Op  = DExpr -> DExpr -> DExpr
 
 newtype Env = Env (Map Var Op)
   deriving newtype (IsList)
@@ -43,6 +43,8 @@ builtin = fromList
   mul (DEInt n) (DEInt m) = DEInt $ n * m
   mul _         _         = error "mul"
 
+-- | A parsed expression.  This still possibly contains syntax sugar,
+-- like (λ a b. …).
 data Expr where
   EInt :: Int -> Expr
   EVar :: Var -> Expr
@@ -51,15 +53,17 @@ data Expr where
   EBin :: Var -> Expr -> Expr -> Expr
   deriving (Show)
 
-data DesugaredExpr where
-  DEInt :: Int -> DesugaredExpr
-  DEVar :: Var -> DesugaredExpr
-  DEBin :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr
-  DELam :: Var -> DesugaredExpr -> DesugaredExpr
-  DEApp :: DesugaredExpr -> DesugaredExpr -> DesugaredExpr
+-- | A desugared expression—all lambdas and applications only take one
+-- argument.
+data DExpr where
+  DEInt :: Int -> DExpr
+  DEVar :: Var -> DExpr
+  DEBin :: Var -> DExpr -> DExpr -> DExpr
+  DELam :: Var -> DExpr -> DExpr
+  DEApp :: DExpr -> DExpr -> DExpr
 
-instance Show DesugaredExpr where
-  show :: DesugaredExpr -> String
+instance Show DExpr where
+  show :: DExpr -> String
   show = \case
     DEInt n      -> show n
     DEVar v      -> unpack v
@@ -70,8 +74,8 @@ instance Show DesugaredExpr where
 data ErrorMsg
   = VariableNotInScope Var
   | OperationNotFound  Var
-  | NotAFunction DesugaredExpr
-  | NoLambdaApplication [Expr] DesugaredExpr
+  | NotAFunction DExpr
+  | NoLambdaApplication [Expr] DExpr
 
 instance Exception ErrorMsg
 
