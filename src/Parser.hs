@@ -23,7 +23,7 @@ read inp = case P.parse (pExpr <* P.eof) "" inp of
   Right expr -> Right expr
 
 pExpr :: Parser Expr
-pExpr = pOps <|> pLambda <|> pApp <|> pTerm
+pExpr = pOps <|> P.try pApp <|> pLambda <|> pTerm
 
 pInt :: Parser Expr
 pInt = EInt <$> L.signed space L.decimal <?> "integer"
@@ -32,7 +32,7 @@ pVar :: Parser Var
 pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "variable"
 
 pLambda :: Parser Expr
-pLambda = space *> (<?> "lambda") do
+pLambda = optParens $ space *> (<?> "lambda") do
   _  <- symbol "\\"
   vs <- pVar `P.sepBy` space
   _  <- symbol "."
@@ -40,9 +40,9 @@ pLambda = space *> (<?> "lambda") do
   pure $ ELam vs e
 
 pApp :: Parser Expr
-pApp = (<?> "application") do
+pApp = optParens $ (<?> "application") do
   lam <- "(" *> pLambda <* ")"
-  apps <- space *> pExpr `P.sepBy` space
+  apps <- space *> pExpr `P.sepBy1` space
   pure $ EApp lam apps
 
 pTerm :: Parser Expr
@@ -72,3 +72,6 @@ symbol = L.symbol space
 -- | We have no comments.
 space :: Parser ()
 space = L.space P.space1 empty empty
+
+optParens :: Parser a -> Parser a
+optParens p = P.try ("(" *> p <* ")") <|> p
