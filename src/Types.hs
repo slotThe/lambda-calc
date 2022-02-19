@@ -15,7 +15,7 @@ import qualified Data.Map.Strict as Map
 
 import Control.Exception
 import Data.Map.Strict (Map)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import GHC.Exts
 
 type Var = Text
@@ -57,7 +57,15 @@ data DesugaredExpr where
   DEBin :: Var -> DesugaredExpr -> DesugaredExpr -> DesugaredExpr
   DELam :: Var -> DesugaredExpr -> DesugaredExpr
   DEApp :: DesugaredExpr -> DesugaredExpr -> DesugaredExpr
-  deriving (Show)
+
+instance Show DesugaredExpr where
+  show :: DesugaredExpr -> String
+  show = \case
+    DEInt n      -> show n
+    DEVar v      -> unpack v
+    DEBin op l r -> show l <> " " <> unpack op <> " " <> show r
+    DELam v x    -> "λ" <> unpack v <> ". " <> show x
+    DEApp f x    -> "(" <> show f <> ") " <> show x
 
 data ErrorMsg
   = VariableNotInScope Var
