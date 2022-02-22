@@ -7,7 +7,7 @@ import Interpreter
 import Control.Monad
 import Control.Exception
 
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 
 main :: IO ()
 main = forever do

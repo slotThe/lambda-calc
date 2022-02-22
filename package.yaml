@@ -7,14 +7,17 @@ maintainer:          soliditsallgood@mailbox.org
 homepage:            TODO
 
 ghc-options:
-  -Wall
-  -Wcompat
-  -Wincomplete-record-updates
-  -Wincomplete-uni-patterns
-  -Wredundant-constraints
+  -Weverything
+  -Wno-implicit-prelude
+  -Wno-missing-import-lists
+  -Wno-unused-packages
+  -Wno-missing-safe-haskell-mode
+  -Wno-all-missed-specialisations
+  -Wno-unsafe
   -O2
 
 default-extensions:
+  - ImportQualifiedPost
   - FlexibleContexts
   - GADTSyntax
   - OverloadedStrings
@@ -36,7 +39,6 @@ dependencies:
   - mtl
   - megaparsec
   - parser-combinators
-  - unliftio
 
 library:
   source-dirs: src

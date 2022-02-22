@@ -1,11 +1,13 @@
-module Parser where
+module Parser (
+  read,
+) where
 
 import Types
 
-import qualified Data.Text                  as T
-import qualified Text.Megaparsec            as P
-import qualified Text.Megaparsec.Char       as P
-import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Text                  qualified as T
+import Text.Megaparsec            qualified as P
+import Text.Megaparsec.Char       qualified as P
+import Text.Megaparsec.Char.Lexer qualified as L
 
 import Control.Monad.Combinators.Expr (Operator (InfixL), makeExprParser)
 import Data.Char (isLetter)
@@ -53,11 +55,13 @@ pTerm = P.try ("(" *> pOps <* ")")
 pOps :: Parser Expr
 pOps = makeExprParser (lexeme pTerm) table <?> "binary operation"
  where
+  table :: [[Operator Parser Expr]]
   table = [ [ binary "*" (EBin "*") ]
           , [ binary "+" (EBin "+")
             , binary "-" (EBin "-")
             ]
           ]
+  binary :: Text -> (Expr -> Expr -> Expr) -> Operator Parser Expr
   binary name f = InfixL (f <$ symbol name)
 
 takeSymbol :: Parser (P.Tokens Text)
