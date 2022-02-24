@@ -11,7 +11,7 @@ module Types (
   ErrorMsg(..),
 ) where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 
 import Control.Exception
 import Data.Map.Strict (Map)
@@ -51,7 +51,7 @@ data Expr where
   ELam :: [Var] -> Expr -> Expr
   EApp :: Expr -> [Expr] -> Expr
   EBin :: Var -> Expr -> Expr -> Expr
-  deriving (Show)
+  deriving stock (Show)
 
 -- | A desugared expression—all lambdas and applications only take one
 -- argument.

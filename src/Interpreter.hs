@@ -8,41 +8,44 @@ import Control.Exception
 import Types
 
 
+-- | Evaluate a desugared expression within an environment.
 eval :: Env -> DExpr -> DExpr
 eval env = go
  where
   go :: DExpr -> DExpr
   go = \case
-    DEApp f a -> case f of
-      DELam param body -> go $ subst param a body
+    DEVar v   -> throw $ VariableNotInScope v
+    DEApp f x -> case f of
+      DELam param body -> go $ subst param x body
       e                -> throw $ NotAFunction e
     DEBin op lhs rhs -> case env !? op of
       Just f  -> f (go lhs) (go rhs)
       Nothing -> throw $ OperationNotFound op
-    DEVar v -> throw $ VariableNotInScope v
     e -> e
 
+-- | Substitute the value of a variable into another expression.
 subst :: Var -> DExpr -> DExpr -> DExpr
-subst var expr = \case
-  v@(DEVar v') -> if var == v' then expr else v
-  DELam v body ->
-    if   var == v
-    then subst var expr body
-    else DELam v (subst var expr body)
-  DEApp f x    -> DEApp (subst var expr f) (subst var expr x)
-  DEBin op l r -> DEBin op (subst var expr l) (subst var expr r)
-  e            -> e
+subst var val = go
+ where
+  go :: DExpr -> DExpr
+  go = \case
+    v@(DEVar v') -> if var == v' then val     else v
+    DELam v body -> if var == v  then go body else DELam v (go body)
+    DEApp f x    -> DEApp (go f) (go x)
+    DEBin op l r -> DEBin op (go l) (go r)
+    e            -> e
 
+-- | Desugar an expression.
 desugar :: Expr -> DExpr
 desugar = \case
   EInt n        -> DEInt n
   EVar v        -> DEVar v
-  EApp ex exs   -> lamHelper exs (desugar ex)
+  EApp f xs     -> desugarLambs xs (desugar f)
   EBin op l r   -> DEBin op (desugar l) (desugar r)
   ELam [x] body -> DELam x (desugar body)
   ELam xs  body -> DELam (head xs) (desugar $ ELam (tail xs) body)
  where
-  lamHelper [x]      l@(DELam _ _   ) = DEApp l (desugar x)
-  lamHelper (x : xs)   (DELam v body) =
-    DEApp (DELam v (lamHelper xs body)) (desugar x)
-  lamHelper xs e = throw $ NoLambdaApplication xs e
+  desugarLambs [x]      lamb@DELam{}   = DEApp lamb (desugar x)
+  desugarLambs (x : xs) (DELam v body) =
+    DEApp (DELam v (desugarLambs xs body)) (desugar x)
+  desugarLambs xs e = throw $ NoLambdaApplication xs e
