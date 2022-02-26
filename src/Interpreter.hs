@@ -15,9 +15,11 @@ eval env = go
   go :: DExpr -> DExpr
   go = \case
     DEVar v   -> throw $ VariableNotInScope v
-    DEApp f x -> case f of
-      DELam param body -> go $ subst param x body
-      e                -> throw $ NotAFunction e
+    DEApp f x -> case go f of
+      DELam param body -> case go x of
+        DEVar v -> throw $ VariableNotInScope v
+        y       -> go $ subst param y body
+      e -> throw $ NotAFunction e
     DEBin op lhs rhs -> case env !? op of
       Just f  -> f (go lhs) (go rhs)
       Nothing -> throw $ OperationNotFound op
