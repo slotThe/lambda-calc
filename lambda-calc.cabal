@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0a20bbdee248a3679866a6ccb9bd77c9af1a30b519703c753c3cbe9a0f21e93b
+-- hash: fe8db00c05df930d1e7824ae08494228050d4250bcedec1424f6b00c01b2504a
 
 name:                lambda-calc
 version:             0.1.0
@@ -18,7 +18,7 @@ build-type:          Simple
 
 library
   exposed-modules:
-      Infer
+      Checker
       Interpreter
       Parser
       Types

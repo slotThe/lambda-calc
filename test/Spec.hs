@@ -1,8 +1,11 @@
 module Main (main) where
 
+import Checker
+import Interpreter
 import Parser
 import Types
 
+import Data.Either (fromRight)
 import Test.Hspec (describe, hspec, it)
 
 main :: IO ()
@@ -25,3 +28,14 @@ main = hspec $ do
                   (EApp (EVar "g")
                         [EApp (EVar "f")
                               [EVar "a", EVar "a"]]))
+
+  let chck = check . desugar . fromRight (EInt 42) . Parser.read
+  describe "Checker.check" $ do
+    it "correctly infers higher-order functions" $
+      chck "(\\g f a b. g (f a b))"
+        == ((TyVar (TVar 6) :-> TyVar (TVar 7))
+             :-> (TyVar (TVar 3) :-> TyVar (TVar 4) :-> TyVar (TVar 6))
+             :-> TyVar (TVar 3) :-> TyVar (TVar 4) :-> TyVar (TVar 7))
+    it "correctly infers built-in operators" $
+      chck "(\\a b c. a * b + c)"
+        == TyCon "Int" :-> TyCon "Int" :-> TyCon "Int" :-> TyCon "Int"

@@ -1,6 +1,6 @@
 # lambda-calc
 
-The obligatory lambda calculus interpreter.
+The obligatory simply typed lambda calculus interpreter.
 
 ## Installation and Usage
 
