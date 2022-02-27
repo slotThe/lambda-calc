@@ -1,6 +1,4 @@
-module Parser (
-  read,
-) where
+module Parser (read) where
 
 import Types
 
@@ -9,7 +7,6 @@ import Text.Megaparsec            qualified as P
 import Text.Megaparsec.Char       qualified as P
 import Text.Megaparsec.Char.Lexer qualified as L
 
-import Control.Monad.Combinators.Expr (Operator (InfixL), makeExprParser)
 import Data.Char (isLetter)
 import Data.Text (Text)
 import Data.Void (Void)
@@ -20,49 +17,46 @@ import Text.Megaparsec (empty, (<?>), (<|>))
 type Parser = P.Parsec Void Text
 
 read :: Text -> Either String Expr
-read inp = case P.parse (pExpr <* P.eof) "" inp of
+read inp = case P.parse ((P.try pOps <|> pLambda) <* P.eof) "" inp of
   Left err   -> Left $ P.errorBundlePretty err
   Right expr -> Right expr
 
-pExpr :: Parser Expr
-pExpr = pOps <|> P.try pApp <|> pLambda <|> pTerm
-
 pInt :: Parser Expr
-pInt = EInt <$> L.signed space L.decimal <?> "integer"
+pInt = EInt <$> lexeme (L.signed mempty L.decimal) <?> "integer"
 
 pVar :: Parser Var
 pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "variable"
 
 pLambda :: Parser Expr
 pLambda = optParens $ space *> (<?> "lambda") do
-  _  <- symbol "\\"
+  _  <- symbol "\\" <|> symbol "λ"
   vs <- pVar `P.sepBy` space
   _  <- symbol "."
-  e  <- lexeme pExpr
+  e  <- lexeme $ P.try pOps <|> pLambda
   pure $ ELam vs e
 
 pApp :: Parser Expr
 pApp = optParens $ (<?> "application") do
-  lam <- "(" *> pLambda <* ")"
-  apps <- space *> pExpr `P.sepBy1` space
-  pure $ EApp lam apps
+  f <- (EVar <$> pVar) <|> ("(" *> pLambda <* ")") <?> "lambda or symbol"
+  apps <- space *> (pLambda <|> P.try pTerm') `P.sepBy1` space  -- prefer lambda
+  pure $ EApp f apps
 
 pTerm :: Parser Expr
-pTerm = P.try ("(" *> pOps <* ")")
-    <|> pInt
-    <|> (EVar <$> pVar)
+pTerm = pInt
+    <|> P.try pApp
+    <|> EVar <$> pVar
+    <|> P.try ("(" *> pOps <* ")")
+
+pTerm' :: Parser Expr
+pTerm' = pInt
+     <|> EVar <$> pVar
+     <|> P.try pApp
+     <|> P.try ("(" *> pOps <* ")")
 
 pOps :: Parser Expr
-pOps = makeExprParser (lexeme pTerm) table <?> "binary operation"
- where
-  table :: [[Operator Parser Expr]]
-  table = [ [ binary "*" (EBin "*") ]
-          , [ binary "+" (EBin "+")
-            , binary "-" (EBin "-")
-            ]
-          ]
-  binary :: Text -> (Expr -> Expr -> Expr) -> Operator Parser Expr
-  binary name f = InfixL (f <$ symbol name)
+pOps = pTerm
+  `chainl1` (EBin "*" <$ symbol "*")
+  `chainl1` ((EBin "+" <$ symbol "+") <|> (EBin "-" <$ symbol "-"))
 
 takeSymbol :: Parser (P.Tokens Text)
 takeSymbol = P.takeWhileP Nothing isLetter
@@ -79,3 +73,14 @@ space = L.space P.space1 empty empty
 
 optParens :: Parser a -> Parser a
 optParens p = P.try ("(" *> p <* ")") <|> p
+
+-- | Apply the parser @p@ at least once; apply the results of the left
+-- associative parser @op@ to results of @p@.
+chainl1 :: forall a. Parser a -> Parser (a -> a -> a) -> Parser a
+chainl1 p op = p >>= rest
+ where
+  rest :: a -> Parser a
+  rest x = do f <- op
+              y <- p
+              rest (f x y)
+       <|> pure x

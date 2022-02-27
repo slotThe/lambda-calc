@@ -3,9 +3,11 @@ module Interpreter (
   desugar,
 ) where
 
-import Prelude hiding (read)
-import Control.Exception
 import Types
+
+import Control.Exception
+import Data.Foldable
+import Prelude hiding (read)
 
 
 -- | Evaluate a desugared expression within an environment.
@@ -49,12 +51,6 @@ desugar :: Expr -> DExpr
 desugar = \case
   EInt n        -> DEInt n
   EVar v        -> DEVar v
-  EApp f xs     -> desugarLambs xs (desugar f)
+  EApp f xs     -> foldl' (\g y -> DEApp g (desugar y)) (desugar f) xs
   EBin op l r   -> DEBin op (desugar l) (desugar r)
-  ELam [x] body -> DELam x (desugar body)
-  ELam xs  body -> DELam (head xs) (desugar $ ELam (tail xs) body)
- where
-  desugarLambs [x]      lamb@DELam{}   = DEApp lamb (desugar x)
-  desugarLambs (x : xs) (DELam v body) =
-    DEApp (DELam v (desugarLambs xs body)) (desugar x)
-  desugarLambs xs e = throw $ NoLambdaApplication xs e
+  ELam xs  body -> foldr DELam (desugar body) xs
