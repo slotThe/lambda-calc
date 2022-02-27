@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f7b5b609d9fb60eb1fe6f0e68d9cb946e04d48705887616b8d0ea07800255646
+-- hash: 0a20bbdee248a3679866a6ccb9bd77c9af1a30b519703c753c3cbe9a0f21e93b
 
 name:                lambda-calc
 version:             0.1.0
@@ -82,3 +82,37 @@ executable lambda-calc
     , parser-combinators
     , text
     , transformers
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_lambda_calc
+  hs-source-dirs:
+      test
+  default-extensions:
+      ImportQualifiedPost
+      FlexibleContexts
+      GADTSyntax
+      OverloadedStrings
+      LambdaCase
+      DerivingStrategies
+      GeneralizedNewtypeDeriving
+      BlockArguments
+      UndecidableInstances
+      InstanceSigs
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+  ghc-options: -Weverything -Wno-implicit-prelude -Wno-missing-import-lists -Wno-unused-packages -Wno-missing-safe-haskell-mode -Wno-all-missed-specialisations -Wno-unsafe -O2
+  build-depends:
+      base
+    , containers
+    , hspec
+    , lambda-calc
+    , megaparsec
+    , mtl
+    , parser-combinators
+    , text
+    , transformers
+  default-language: Haskell2010

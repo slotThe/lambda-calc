@@ -48,3 +48,11 @@ executables:
     source-dirs: app
     main: Main.hs
     dependencies: lambda-calc
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs: test
+    dependencies:
+      - lambda-calc
+      - hspec

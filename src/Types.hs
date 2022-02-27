@@ -51,7 +51,7 @@ data Expr where
   ELam :: [Var] -> Expr -> Expr
   EApp :: Expr -> [Expr] -> Expr
   EBin :: Var -> Expr -> Expr -> Expr
-  deriving stock (Show)
+  deriving stock (Eq, Show)
 
 -- | A desugared expression—all lambdas and applications only take one
 -- argument.
