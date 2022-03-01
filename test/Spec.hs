@@ -33,9 +33,9 @@ main = hspec $ do
   describe "Checker.check" $ do
     it "correctly infers higher-order functions" $
       chck "(\\g f a b. g (f a b))"
-        == ((TyVar (TVar 6) :-> TyVar (TVar 7))
-             :-> (TyVar (TVar 3) :-> TyVar (TVar 4) :-> TyVar (TVar 6))
-             :-> TyVar (TVar 3) :-> TyVar (TVar 4) :-> TyVar (TVar 7))
+        == ((TyVar (TVar 3) :-> TyVar (TVar 4))
+             :-> (TyVar (TVar 1) :-> TyVar (TVar 2) :-> TyVar (TVar 3))
+             :-> TyVar (TVar 1) :-> TyVar (TVar 2) :-> TyVar (TVar 4))
     it "correctly infers built-in operators" $
       chck "(\\a b c. a * b + c)"
         == TyCon "Int" :-> TyCon "Int" :-> TyCon "Int" :-> TyCon "Int"

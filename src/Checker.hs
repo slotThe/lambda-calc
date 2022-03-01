@@ -2,27 +2,50 @@ module Checker (check) where
 
 import Types
 
+import Data.Map.Strict qualified as Map
+import Data.Set        qualified as Set
+
 import Control.Exception
 import Control.Monad.State
 import Data.Bifunctor
 import Data.Functor
 import Data.Map (Map)
-import Data.Map.Strict qualified as Map
-import GHC.Exts (fromList)
+import Data.Set (Set)
+import GHC.Exts (fromList, toList)
 
 
 -- | Type check a desugared expression.
 check :: DExpr -> Type
-check expr =
-  let (ty, constraints) = evalState (infer context expr) (TVar <$> [1..])
-  in  refine (evalState (unify constraints) []) ty
+check expr = normalise $ refine (evalState (unify constraints) []) ty
  where
+  (ty, constraints) = evalState (infer context expr) (TVar <$> [1..])
+
   context :: Map Var Type
   context = fromList
     [ ("+", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
     , ("-", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
     , ("*", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
     ]
+
+-- | Normalise a type; i.e., normalise the list of type variables from,
+-- for example, @[4, 6, 15]@ to @[1, 2, 3]@.
+normalise :: Type -> Type
+normalise ty = go ty
+ where
+  go :: Type -> Type
+  go = \case
+    TyVar tv -> TyVar (vars Map.! tv)
+    l :-> r  -> go l :-> go r
+    t        -> t
+
+  vars :: Map TVar TVar
+  vars = fromList $ toList (allVars ty) `zip` map TVar [1 ..]
+   where
+    allVars :: Type -> Set TVar
+    allVars = \case
+      TyVar tv -> Set.singleton tv
+      l :-> r  -> allVars l <> allVars r
+      TyCon{}  -> mempty
 
 -- | Given some type context, infer a type and generate constraints for
 -- the given expression.

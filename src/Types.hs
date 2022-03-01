@@ -19,10 +19,11 @@ module Types (
 import Data.Map.Strict qualified as Map
 
 import Control.Exception
+import Control.Monad.State
+import Data.Char
 import Data.Map.Strict (Map)
 import Data.Text (Text, unpack)
 import GHC.Exts (IsList(fromList), coerce)
-import Control.Monad.State
 
 type Var = Text
 type Op  = DExpr -> DExpr -> DExpr
@@ -95,8 +96,8 @@ infixr 5 :->
 instance Show Type where
   show :: Type -> String
   show = \case
-    TyVar tv   -> "a" <> show tv
-    TyCon tc   -> tc
+    TyVar (TVar tv) -> if tv <= 26 then [chr (tv + 96)] else "a" <> show tv
+    TyCon tc        -> tc
     -- Properly show higher-order functions.
     arr@(_ :-> _) :-> ty  -> "(" <> show arr <> ") → " <> show ty
     ty            :-> ty' -> show ty <> " → " <> show ty'
