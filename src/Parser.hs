@@ -31,7 +31,7 @@ pLambda :: Parser Expr
 pLambda = optParens $ space *> (<?> "lambda") do
   _  <- symbol "\\" <|> symbol "λ"
   vs <- pVar `P.sepBy` space
-  _  <- symbol "."
+  _  <- symbol "." <|> symbol "->" <|> symbol "→"
   e  <- lexeme $ P.try pOps <|> pLambda
   pure $ ELam vs e
 
