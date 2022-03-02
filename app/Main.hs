@@ -21,9 +21,9 @@ main = forever do
   l <- T.getLine
   if ":t " `T.isPrefixOf` l
     then tryEval (T.drop 3 l) check
-    else tryEval l            (eval builtin)
+    else tryEval l            (eval builtin . checkExpr)
  where
-  tryEval :: Show a => Text -> (DExpr -> a) -> IO ()
+  tryEval :: Show a => Text -> (UncheckedExpr -> a) -> IO ()
   tryEval e f = case read e of
     Left  err  -> putStr err
     Right expr -> print (f (desugar expr)) `catch` print @SomeException

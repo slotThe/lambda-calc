@@ -1,4 +1,7 @@
-module Checker (check) where
+module Checker (
+  check,
+  checkExpr,
+) where
 
 import Types
 
@@ -8,14 +11,20 @@ import Data.Set        qualified as Set
 import Control.Exception
 import Control.Monad.State
 import Data.Bifunctor
+import Data.Coerce (coerce)
 import Data.Functor
 import Data.Map (Map)
 import Data.Set (Set)
 import GHC.Exts (fromList, toList)
 
 
--- | Type check a desugared expression.
-check :: DExpr -> Type
+-- | Type check an unchecked expression and return the checked
+-- expression if possible.
+checkExpr :: UncheckedExpr -> CheckedExpr
+checkExpr expr = let !_ = check expr in coerce expr
+
+-- | Type check an unchecked expression.
+check :: UncheckedExpr -> Type
 check expr = normalise $ refine (evalState (unify constraints) []) ty
  where
   (ty, constraints) = evalState (infer context expr) (TVar <$> [1..])
@@ -49,7 +58,7 @@ normalise ty = go ty
 
 -- | Given some type context, infer a type and generate constraints for
 -- the given expression.
-infer :: Map Var Type -> DExpr -> Infer (Type, Constraints)
+infer :: Map Var Type -> UncheckedExpr -> Infer (Type, Constraints)
 infer context = \case
   DEInt{} -> pure (TyCon "Int", mempty)
   DEVar v -> case context Map.!? v of

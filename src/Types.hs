@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Types (
   -- * The Environment
   Var,
@@ -7,6 +8,8 @@ module Types (
   -- * Expression Types
   Expr(..),
   DExpr(..),
+  CheckedExpr,
+  UncheckedExpr,
   -- * The Type System
   Type(..),
   Infer,
@@ -26,7 +29,7 @@ import Data.Text (Text, unpack)
 import GHC.Exts (IsList(fromList), coerce)
 
 type Var = Text
-type Op  = DExpr -> DExpr -> DExpr
+type Op  = CheckedExpr -> CheckedExpr -> CheckedExpr
 
 newtype Env = Env (Map Var Op)
   deriving newtype (IsList)
@@ -41,14 +44,11 @@ builtin = fromList
   , ("*", mul)
   ]
  where
+  -- These are safe because we are handling type-checked expressions.
+  add, sub, mul :: CheckedExpr -> CheckedExpr -> CheckedExpr
   add (DEInt n) (DEInt m) = DEInt $ n + m
-  add _         _         = error "add"
-
   sub (DEInt n) (DEInt m) = DEInt $ n - m
-  sub _         _         = error "sub"
-
   mul (DEInt n) (DEInt m) = DEInt $ n * m
-  mul _         _         = error "mul"
 
 -- | A parsed expression.  This still possibly contains syntax sugar,
 -- like (λ a b. …).
@@ -62,15 +62,15 @@ data Expr where
 
 -- | A desugared expression—all lambdas and applications only take one
 -- argument.
-data DExpr where
-  DEInt :: Int -> DExpr
-  DEVar :: Var -> DExpr
-  DEBin :: Var -> DExpr -> DExpr -> DExpr
-  DELam :: Var -> DExpr -> DExpr
-  DEApp :: DExpr -> DExpr -> DExpr
+data DExpr a where
+  DEInt :: Int -> DExpr a
+  DEVar :: Var -> DExpr a
+  DEBin :: Var -> DExpr a -> DExpr a -> DExpr a
+  DELam :: Var -> DExpr a -> DExpr a
+  DEApp :: DExpr a -> DExpr a -> DExpr a
 
-instance Show DExpr where
-  show :: DExpr -> String
+instance Show (DExpr a) where
+  show :: DExpr a -> String
   show = \case
     DEInt n      -> show n
     DEVar v      -> unpack v
@@ -81,8 +81,20 @@ instance Show DExpr where
 ------------------------------------------------------------------------
 -- Our Type System
 
+-- Phantom types to differentiate checked and unchecked expressions.
+
+data Checked
+type CheckedExpr   = DExpr Checked
+
+data Unchecked
+type UncheckedExpr = DExpr Unchecked
+
+-- | A type variable.
 newtype TVar = TVar Int
   deriving newtype (Show, Eq, Ord)
+
+-- | The monad in which type inference will take place.
+type Infer a = State [TVar] a
 
 -- | The type... of a type!
 data Type where
@@ -105,29 +117,23 @@ instance Show Type where
 -- | A type constraint of the form @ty ~ ty'@.
 type Constraints = [(Type, Type)]
 
--- | The monad in which type inference will take place.
-type Infer a = State [TVar] a
-
 ------------------------------------------------------------------------
 -- Error Handling
 
 data ErrorMsg where
-  VariableNotInScope  :: Var -> ErrorMsg
-  OperationNotFound   :: Var -> ErrorMsg
-  NotAFunction        :: DExpr -> ErrorMsg
-  UnificationError    :: Type -> Type -> ErrorMsg
-  OccursError         :: Type -> Type -> ErrorMsg
+  VariableNotInScope :: Var -> ErrorMsg
+  OperationNotFound  :: Var -> ErrorMsg
+  UnificationError   :: Type -> Type -> ErrorMsg
+  OccursError        :: Type -> Type -> ErrorMsg
 
 instance Exception ErrorMsg
 
 instance Show ErrorMsg where
   show :: ErrorMsg -> String
   show = \case
-    VariableNotInScope v -> "Variable not in scope: " <> show v <> "."
-    OperationNotFound op -> "Operation not found: " <> show op <> "."
-    NotAFunction expr    ->
-      "Can't apply " <> show expr <> " because it is not a function."
+    VariableNotInScope v   -> "Variable not in scope: " <> show v <> "."
+    OperationNotFound op   -> "Operation not found: " <> show op <> "."
     UnificationError t1 t2 ->
       "Can't match type `" <> show t1 <> "' with type `" <> show t2 <> "'."
-    OccursError t1 t2 ->
+    OccursError t1 t2      ->
       "Can't construct infinite type: `" <> show t1 <> "' ~ `" <> show t2 <> "'."

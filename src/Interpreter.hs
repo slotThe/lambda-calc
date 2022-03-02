@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Interpreter (
   eval,
   desugar,
@@ -11,17 +12,18 @@ import Prelude hiding (read)
 
 
 -- | Evaluate a desugared expression within an environment.
-eval :: Env -> DExpr -> DExpr
+eval :: Env -> CheckedExpr -> CheckedExpr
 eval env = go
  where
-  go :: DExpr -> DExpr
+  go :: CheckedExpr -> CheckedExpr
   go = \case
     DEVar v   -> throw $ VariableNotInScope v
     DEApp f x -> case go f of
+      -- NOTE: This partial match is safe because we are already type
+      -- checked.
       DELam param body -> case go x of
         DEVar v -> throw $ VariableNotInScope v
         y       -> go $ subst param y body
-      e -> throw $ NotAFunction e
     DEBin op lhs rhs -> case env !? op of
       Just f  -> f (go lhs) (go rhs)
       Nothing -> throw $ OperationNotFound op
@@ -35,10 +37,10 @@ eval env = go
 -- scope, we immediately exit with the lambda as our final expression
 -- and do not substitute any value.  This is essentially a hack to get
 -- around having to use De Bruijn indices.
-subst :: Var -> DExpr -> DExpr -> DExpr
+subst :: Var -> CheckedExpr -> CheckedExpr -> CheckedExpr
 subst var val = go
  where
-  go :: DExpr -> DExpr
+  go :: CheckedExpr -> CheckedExpr
   go = \case
     v@(DEVar v')     -> if var == v' then val else v
     l@(DELam v body) -> if var == v  then l   else DELam v (go body)
@@ -47,7 +49,7 @@ subst var val = go
     e                -> e
 
 -- | Desugar an expression.
-desugar :: Expr -> DExpr
+desugar :: Expr -> UncheckedExpr
 desugar = \case
   EInt n        -> DEInt n
   EVar v        -> DEVar v

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fe8db00c05df930d1e7824ae08494228050d4250bcedec1424f6b00c01b2504a
+-- hash: ee4010e8ac07fae4105d200a17b5d72fd4fe2aa3a91ed563f8274da68812bcec
 
 name:                lambda-calc
 version:             0.1.0
@@ -40,6 +40,7 @@ library
       ScopedTypeVariables
       TupleSections
       TypeApplications
+      BangPatterns
   ghc-options: -Weverything -Wno-implicit-prelude -Wno-missing-import-lists -Wno-unused-packages -Wno-missing-safe-haskell-mode -Wno-all-missed-specialisations -Wno-unsafe -O2
   build-depends:
       base
@@ -68,6 +69,7 @@ executable lambda-calc
       ScopedTypeVariables
       TupleSections
       TypeApplications
+      BangPatterns
   ghc-options: -Weverything -Wno-implicit-prelude -Wno-missing-import-lists -Wno-unused-packages -Wno-missing-safe-haskell-mode -Wno-all-missed-specialisations -Wno-unsafe -O2
   main-is: Main.hs
   other-modules:
@@ -104,6 +106,7 @@ test-suite spec
       ScopedTypeVariables
       TupleSections
       TypeApplications
+      BangPatterns
   ghc-options: -Weverything -Wno-implicit-prelude -Wno-missing-import-lists -Wno-unused-packages -Wno-missing-safe-haskell-mode -Wno-all-missed-specialisations -Wno-unsafe -O2
   build-depends:
       base
