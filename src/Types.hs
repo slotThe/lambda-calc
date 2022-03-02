@@ -115,7 +115,6 @@ data ErrorMsg where
   VariableNotInScope  :: Var -> ErrorMsg
   OperationNotFound   :: Var -> ErrorMsg
   NotAFunction        :: DExpr -> ErrorMsg
-  NoLambdaApplication :: [Expr] -> DExpr -> ErrorMsg
   UnificationError    :: Type -> Type -> ErrorMsg
   OccursError         :: Type -> Type -> ErrorMsg
 
@@ -128,8 +127,6 @@ instance Show ErrorMsg where
     OperationNotFound op -> "Operation not found: " <> show op <> "."
     NotAFunction expr    ->
       "Can't apply " <> show expr <> " because it is not a function."
-    NoLambdaApplication app notLam ->
-      "Can't apply " <> show app <> " to non-lambda expression " <> show notLam <> "."
     UnificationError t1 t2 ->
       "Can't match type `" <> show t1 <> "' with type `" <> show t2 <> "'."
     OccursError t1 t2 ->
