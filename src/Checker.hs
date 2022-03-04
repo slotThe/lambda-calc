@@ -61,9 +61,10 @@ normalise ty = go ty
 -- the given expression.
 infer :: Map Var Type -> UncheckedExpr -> Infer (Type, Constraints)
 infer context = \case
-  DEInt{} -> pure (TyCon "Int", mempty)
-  DEStr{} -> pure (TyCon "String", mempty)
-  DEVar v -> case context Map.!? v of
+  DEBool{} -> pure (TyCon "Bool", mempty)
+  DEInt{}  -> pure (TyCon "Int", mempty)
+  DEStr{}  -> pure (TyCon "String", mempty)
+  DEVar v  -> case context Map.!? v of
     Nothing -> throw $ VariableNotInScope v
     Just v' -> pure (v', mempty)
   DELam v body -> do

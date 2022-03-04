@@ -51,9 +51,10 @@ subst var val = go
 -- | Desugar an expression.
 desugar :: Expr -> UncheckedExpr
 desugar = \case
-  EInt n        -> DEInt n
-  EStr s        -> DEStr s
-  EVar v        -> DEVar v
-  EApp f xs     -> foldl' (\g y -> DEApp g (desugar y)) (desugar f) xs
-  EBin op l r   -> DEBin op (desugar l) (desugar r)
-  ELam xs  body -> foldr DELam (desugar body) xs
+  EBool b        -> DEBool b
+  EInt  n        -> DEInt n
+  EStr  s        -> DEStr s
+  EVar  v        -> DEVar v
+  EApp  f xs     -> foldl' (\g y -> DEApp g (desugar y)) (desugar f) xs
+  EBin  op l r   -> DEBin op (desugar l) (desugar r)
+  ELam  xs  body -> foldr DELam (desugar body) xs

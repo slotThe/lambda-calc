@@ -55,33 +55,36 @@ builtin = fromList
 -- | A parsed expression.  This still possibly contains syntax sugar,
 -- like (λ a b. …).
 data Expr where
-  EStr :: Text -> Expr
-  EInt :: Int -> Expr
-  EVar :: Var -> Expr
-  ELam :: [Var] -> Expr -> Expr
-  EApp :: Expr -> [Expr] -> Expr
-  EBin :: Var -> Expr -> Expr -> Expr
+  EBool :: Bool -> Expr
+  EStr  :: Text -> Expr
+  EInt  :: Int -> Expr
+  EVar  :: Var -> Expr
+  ELam  :: [Var] -> Expr -> Expr
+  EApp  :: Expr -> [Expr] -> Expr
+  EBin  :: Var -> Expr -> Expr -> Expr
   deriving stock (Eq, Show)
 
 -- | A desugared expression—all lambdas and applications only take one
 -- argument.
 data DExpr a where
-  DEStr :: Text -> DExpr a
-  DEInt :: Int -> DExpr a
-  DEVar :: Var -> DExpr a
-  DEBin :: Var -> DExpr a -> DExpr a -> DExpr a
-  DELam :: Var -> DExpr a -> DExpr a
-  DEApp :: DExpr a -> DExpr a -> DExpr a
+  DEBool :: Bool -> DExpr a
+  DEStr  :: Text -> DExpr a
+  DEInt  :: Int -> DExpr a
+  DEVar  :: Var -> DExpr a
+  DEBin  :: Var -> DExpr a -> DExpr a -> DExpr a
+  DELam  :: Var -> DExpr a -> DExpr a
+  DEApp  :: DExpr a -> DExpr a -> DExpr a
 
 instance Show (DExpr a) where
   show :: DExpr a -> String
   show = \case
-    DEStr n      -> unpack n
-    DEInt n      -> show n
-    DEVar v      -> unpack v
-    DEBin op l r -> show l <> " " <> unpack op <> " " <> show r
-    DELam v x    -> "λ" <> unpack v <> ". " <> show x
-    DEApp f x    -> "(" <> show f <> ") " <> show x
+    DEBool b     -> show b
+    DEStr  n      -> unpack n
+    DEInt  n      -> show n
+    DEVar  v      -> unpack v
+    DEBin  op l r -> show l <> " " <> unpack op <> " " <> show r
+    DELam  v x    -> "λ" <> unpack v <> ". " <> show x
+    DEApp  f x    -> "(" <> show f <> ") " <> show x
 
 ------------------------------------------------------------------------
 -- Our Type System

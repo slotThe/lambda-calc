@@ -7,7 +7,8 @@ import Text.Megaparsec            qualified as P
 import Text.Megaparsec.Char       qualified as P
 import Text.Megaparsec.Char.Lexer qualified as L
 
-import Data.Char (isLetter)
+import Data.Char
+import Data.Functor
 import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (read)
@@ -22,13 +23,12 @@ read inp = case P.parse ((P.try pOps <|> pLambda) <* P.eof) "" inp of
   Right expr -> Right expr
 
 pCon :: Parser Expr
-pCon = pInt <|> pStr
+pCon = pInt <|> pStr <|> pBool
  where
-  pInt :: Parser Expr
-  pInt = EInt <$> lexeme (L.signed mempty L.decimal) <?> "integer"
-
-  pStr :: Parser Expr
-  pStr = EStr <$> lexeme ("\"" *> P.takeWhileP Nothing (/= '"')  <* "\"")
+  pInt, pStr, pBool :: Parser Expr
+  pInt  = EInt  <$> L.signed mempty L.decimal        <?> "integer"
+  pStr  = EStr  <$> ("\"" *> P.takeWhileP Nothing (/= '"')  <* "\"") <?> "string"
+  pBool = EBool <$> ("#t" $> True <|> "#f" $> False) <?> "boolean"
 
 pVar :: Parser Var
 pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "variable"
