@@ -21,8 +21,14 @@ read inp = case P.parse ((P.try pOps <|> pLambda) <* P.eof) "" inp of
   Left err   -> Left $ P.errorBundlePretty err
   Right expr -> Right expr
 
-pInt :: Parser Expr
-pInt = EInt <$> lexeme (L.signed mempty L.decimal) <?> "integer"
+pCon :: Parser Expr
+pCon = pInt <|> pStr
+ where
+  pInt :: Parser Expr
+  pInt = EInt <$> lexeme (L.signed mempty L.decimal) <?> "integer"
+
+  pStr :: Parser Expr
+  pStr = EStr <$> lexeme ("\"" *> P.takeWhileP Nothing (/= '"')  <* "\"")
 
 pVar :: Parser Var
 pVar = lexeme (T.cons <$> P.letterChar <*> takeSymbol) <?> "variable"
@@ -42,13 +48,13 @@ pApp = optParens $ (<?> "application") do
   pure $ EApp f apps
 
 pTerm :: Parser Expr
-pTerm = pInt
+pTerm = pCon
     <|> P.try pApp
     <|> EVar <$> pVar
     <|> P.try ("(" *> pOps <* ")")
 
 pTerm' :: Parser Expr
-pTerm' = pInt
+pTerm' = pCon
      <|> EVar <$> pVar
      <|> P.try pApp
      <|> P.try ("(" *> pOps <* ")")
@@ -56,7 +62,10 @@ pTerm' = pInt
 pOps :: Parser Expr
 pOps = pTerm
   `chainl1` (EBin "*" <$ symbol "*")
-  `chainl1` ((EBin "+" <$ symbol "+") <|> (EBin "-" <$ symbol "-"))
+  `chainl1` P.choice [ EBin "++" <$ symbol "++"
+                     , EBin "+"  <$ symbol "+"
+                     , EBin "-"  <$ symbol "-"
+                     ]
 
 takeSymbol :: Parser (P.Tokens Text)
 takeSymbol = P.takeWhileP Nothing isLetter

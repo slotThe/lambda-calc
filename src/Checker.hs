@@ -31,9 +31,10 @@ check expr = normalise $ refine (evalState (unify constraints) []) ty
 
   context :: Map Var Type
   context = fromList
-    [ ("+", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
-    , ("-", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
-    , ("*", TyCon "Int" :-> TyCon "Int" :-> TyCon "Int")
+    [ ("+" , TyCon "Int"    :-> TyCon "Int"    :-> TyCon "Int")
+    , ("-" , TyCon "Int"    :-> TyCon "Int"    :-> TyCon "Int")
+    , ("*" , TyCon "Int"    :-> TyCon "Int"    :-> TyCon "Int")
+    , ("++", TyCon "String" :-> TyCon "String" :-> TyCon "String")
     ]
 
 -- | Normalise a type; i.e., normalise the list of type variables from,
@@ -61,6 +62,7 @@ normalise ty = go ty
 infer :: Map Var Type -> UncheckedExpr -> Infer (Type, Constraints)
 infer context = \case
   DEInt{} -> pure (TyCon "Int", mempty)
+  DEStr{} -> pure (TyCon "String", mempty)
   DEVar v -> case context Map.!? v of
     Nothing -> throw $ VariableNotInScope v
     Just v' -> pure (v', mempty)

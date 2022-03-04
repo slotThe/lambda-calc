@@ -39,20 +39,23 @@ newtype Env = Env (Map Var Op)
 
 builtin :: Env
 builtin = fromList
-  [ ("+", add)
-  , ("-", sub)
-  , ("*", mul)
+  [ ("+" , add)
+  , ("-" , sub)
+  , ("*" , mul)
+  , ("++", cat)
   ]
  where
   -- These are safe because we are handling type-checked expressions.
-  add, sub, mul :: CheckedExpr -> CheckedExpr -> CheckedExpr
+  add, sub, mul, cat :: CheckedExpr -> CheckedExpr -> CheckedExpr
   add (DEInt n) (DEInt m) = DEInt $ n + m
   sub (DEInt n) (DEInt m) = DEInt $ n - m
   mul (DEInt n) (DEInt m) = DEInt $ n * m
+  cat (DEStr s) (DEStr t) = DEStr $ s <> t
 
 -- | A parsed expression.  This still possibly contains syntax sugar,
 -- like (λ a b. …).
 data Expr where
+  EStr :: Text -> Expr
   EInt :: Int -> Expr
   EVar :: Var -> Expr
   ELam :: [Var] -> Expr -> Expr
@@ -63,6 +66,7 @@ data Expr where
 -- | A desugared expression—all lambdas and applications only take one
 -- argument.
 data DExpr a where
+  DEStr :: Text -> DExpr a
   DEInt :: Int -> DExpr a
   DEVar :: Var -> DExpr a
   DEBin :: Var -> DExpr a -> DExpr a -> DExpr a
@@ -72,6 +76,7 @@ data DExpr a where
 instance Show (DExpr a) where
   show :: DExpr a -> String
   show = \case
+    DEStr n      -> unpack n
     DEInt n      -> show n
     DEVar v      -> unpack v
     DEBin op l r -> show l <> " " <> unpack op <> " " <> show r
