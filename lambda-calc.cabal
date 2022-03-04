@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ee4010e8ac07fae4105d200a17b5d72fd4fe2aa3a91ed563f8274da68812bcec
+-- hash: 7343a76138f52c0b0e61bbb6d20b657a79ecc29b0e3e04f947146516bb3b88c9
 
 name:                lambda-calc
 version:             0.1.0
@@ -27,6 +27,7 @@ library
   hs-source-dirs:
       src
   default-extensions:
+      StrictData
       ImportQualifiedPost
       FlexibleContexts
       GADTSyntax
@@ -56,6 +57,7 @@ executable lambda-calc
   hs-source-dirs:
       app
   default-extensions:
+      StrictData
       ImportQualifiedPost
       FlexibleContexts
       GADTSyntax
@@ -93,6 +95,7 @@ test-suite spec
   hs-source-dirs:
       test
   default-extensions:
+      StrictData
       ImportQualifiedPost
       FlexibleContexts
       GADTSyntax

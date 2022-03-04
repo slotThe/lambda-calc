@@ -17,6 +17,7 @@ ghc-options:
   -O2
 
 default-extensions:
+  - StrictData
   - ImportQualifiedPost
   - FlexibleContexts
   - GADTSyntax
