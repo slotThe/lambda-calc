@@ -21,6 +21,12 @@ This implementation is stream-focused—that means the evaluator has no
 "memory" of what came before it.  This would be superfluous anyways, as
 there is no way to define functions other than lambdas.
 
+- Primitive types are:
+
+  - Integers: `1`, `100`, `42`, …
+  - Strings: `"Vi Vi Vi, the editor of the beast."`
+  - Booleans: `#t` and `#f`
+
 - For lambdas both `λ` and `\` can be used
 
   ```
