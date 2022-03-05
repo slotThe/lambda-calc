@@ -23,7 +23,7 @@ read inp = case P.parse ((P.try pOps <|> pLambda) <* P.eof) "" inp of
   Right expr -> Right expr
 
 pCon :: Parser Expr
-pCon = pInt <|> pStr <|> pBool
+pCon = lexeme $ pInt <|> pStr <|> pBool
  where
   pInt, pStr, pBool :: Parser Expr
   pInt  = EInt  <$> L.signed mempty L.decimal        <?> "integer"
