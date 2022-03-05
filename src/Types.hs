@@ -2,19 +2,17 @@
 module Types (
   -- * The Environment
   Var,
-  Env(..),
-  (!?),
+  Env(..), (!?),
   builtin,
   -- * Expression Types
   Expr(..),
-  DExpr(..),
-  CheckedExpr,
-  UncheckedExpr,
+  DExpr(..), CheckedExpr, UncheckedExpr,
   -- * The Type System
   Type(..),
   Infer,
   TVar(..),
   Constraints,
+  pattern TyStr, pattern TyInt, pattern TyBool,
   -- * Evaluation Errors
   ErrorMsg(..),
 ) where
@@ -124,6 +122,13 @@ instance Show Type where
 
 -- | A type constraint of the form @ty ~ ty'@.
 type Constraints = [(Type, Type)]
+
+-- built-in types
+
+pattern TyStr, TyBool, TyInt :: Type
+pattern TyStr  = TyCon "String"
+pattern TyInt  = TyCon "Int"
+pattern TyBool = TyCon "Bool"
 
 ------------------------------------------------------------------------
 -- Error Handling
