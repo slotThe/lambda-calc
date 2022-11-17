@@ -24,12 +24,12 @@ checkExpr :: UncheckedExpr -> CheckedExpr
 checkExpr expr = let !_ = check expr in coerce expr
 
 -- | Type check an unchecked expression.
-check :: UncheckedExpr -> Type
+check :: UncheckedExpr -> LcType
 check expr = normalise $ refine (evalState (unify constraints) []) ty
  where
   (ty, constraints) = evalState (infer context expr) (TVar <$> [1..])
 
-  context :: Map Var Type
+  context :: Map Var LcType
   context = fromList
     [ ("+" , TyInt :-> TyInt :-> TyInt)
     , ("-" , TyInt :-> TyInt :-> TyInt)
@@ -39,10 +39,10 @@ check expr = normalise $ refine (evalState (unify constraints) []) ty
 
 -- | Normalise a type; i.e., normalise the list of type variables from,
 -- for example, @[4, 6, 15]@ to @[1, 2, 3]@.
-normalise :: Type -> Type
+normalise :: LcType -> LcType
 normalise ty = go ty
  where
-  go :: Type -> Type
+  go :: LcType -> LcType
   go = \case
     TyVar tv -> TyVar (vars Map.! tv)
     l :-> r  -> go l :-> go r
@@ -51,7 +51,7 @@ normalise ty = go ty
   vars :: Map TVar TVar
   vars = fromList $ toList (allVars ty) `zip` map TVar [1 ..]
    where
-    allVars :: Type -> Set TVar
+    allVars :: LcType -> Set TVar
     allVars = \case
       TyVar tv -> Set.singleton tv
       l :-> r  -> allVars l <> allVars r
@@ -59,7 +59,7 @@ normalise ty = go ty
 
 -- | Given some type context, infer a type and generate constraints for
 -- the given expression.
-infer :: Map Var Type -> UncheckedExpr -> Infer (Type, Constraints)
+infer :: Map Var LcType -> UncheckedExpr -> Infer (LcType, Constraints)
 infer context = \case
   DEBool{} -> pure (TyBool, mempty)
   DEInt{}  -> pure (TyInt, mempty)
@@ -84,19 +84,19 @@ infer context = \case
     pure (retTy, (opTy, lTy :-> rTy :-> retTy) : (opCon <> lCon <> rCon))
 
 -- | Unify constraints.
-unify :: Constraints -> Infer (Map TVar Type)
+unify :: Constraints -> Infer (Map TVar LcType)
 unify = \case
   []           -> pure mempty
   (c, c') : cs -> if c == c' then unify cs else go c c'
    where
-    go :: Type -> Type -> Infer (Map TVar Type)
+    go :: LcType -> LcType -> Infer (Map TVar LcType)
     go c1@(TyVar v) c2           = refineVar v c1 c2
     go c1           c2@(TyVar v) = refineVar v c2 c1
     go (l :-> r)    (l' :-> r')  = unify $ [(l, l'), (r, r')] <> cs
     go t1           t2           = throw $ UnificationError t1 t2
 
-    -- | Imbue a type variable with more information.
-    refineVar :: TVar -> Type -> Type -> Infer (Map TVar Type)
+    -- Imbue a type variable with more information.
+    refineVar :: TVar -> LcType -> LcType -> Infer (Map TVar LcType)
     refineVar tyVar tyA tyB =
       if tyVar `occursIn` tyB
       then throw $ OccursError tyA tyB
@@ -107,7 +107,7 @@ unify = \case
            <&> (<> bTyMap)
      where bTyMap = Map.singleton tyVar tyB
 
-    occursIn :: TVar -> Type -> Bool
+    occursIn :: TVar -> LcType -> Bool
     v `occursIn` TyVar y   = v == y
     v `occursIn` (a :-> b) = v `occursIn` a || v `occursIn` b
     _ `occursIn` TyCon{}   = False
@@ -118,10 +118,10 @@ unify = \case
 -- that we don't yet know about.  E.g., it may contain the key-value
 -- pair @(TVar 2, TyCon "Int")@ which, when calling refine on the type
 -- @TyVar (TVar 2)@ would return @TyCon "Int"@.
-refine :: Map TVar Type -> Type -> Type
+refine :: Map TVar LcType -> LcType -> LcType
 refine tyMap t = Map.foldrWithKey' go t tyMap
  where
-  go :: TVar -> Type -> Type -> Type
+  go :: TVar -> LcType -> LcType -> LcType
   go tvar ty = \case
     TyVar tv   -> if tvar == tv then ty else TyVar tv
     x :-> z    -> go tvar ty x :-> go tvar ty z

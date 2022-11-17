@@ -9,12 +9,14 @@ import Text.Megaparsec.Char.Lexer qualified as L
 
 import Data.Char
 import Data.Functor
+import Data.Kind (Type)
 import Data.Text (Text)
 import Data.Void (Void)
 import Prelude hiding (read)
 import Text.Megaparsec (empty, (<?>), (<|>))
 
 
+type Parser :: Type -> Type
 type Parser = P.Parsec Void Text
 
 read :: Text -> Either String Expr

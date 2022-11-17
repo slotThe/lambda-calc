@@ -16,23 +16,16 @@ ghc-options:
   -Wno-unsafe
   -O2
 
+language: GHC2021
+
 default-extensions:
   - StrictData
-  - ImportQualifiedPost
-  - FlexibleContexts
-  - GADTSyntax
   - OverloadedStrings
   - LambdaCase
-  - DerivingStrategies
-  - GeneralizedNewtypeDeriving
   - BlockArguments
   - UndecidableInstances
-  - InstanceSigs
-  - ScopedTypeVariables
-  - TupleSections
-  - TypeApplications
-  - BangPatterns
   - PatternSynonyms
+  - DerivingStrategies
 
 dependencies:
   - base
